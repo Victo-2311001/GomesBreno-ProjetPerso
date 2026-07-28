@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import axios from "axios";
 import {
   Box,
@@ -14,15 +14,21 @@ import CloseIcon from "@mui/icons-material/Close";
 
 const API_BASE = "http://localhost:3001";
 
-export default function App() {
-  const inputRef = useRef(null);
-  const fileRef = useRef(null);
-  const [chat, setChat] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [selectedFile, setSelectedFile] = useState(null);
+type ChatMessage = {
+  role: "Toi" | "Radin";
+  content: string;
+  image?: string | null;
+};
 
-  const handleFileChange = (e) => {
+export default function App() {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [chat, setChat] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setSelectedFile(file);
@@ -32,11 +38,13 @@ export default function App() {
   const effacerImage = () => {
     setSelectedFile(null);
     setImagePreview(null);
-    if (fileRef.current) fileRef.current.value = "";
+    if (fileRef.current) {
+      fileRef.current.value = "";
+    }
   };
 
   const send = async () => {
-    const text = inputRef.current.value.trim();
+    const text = inputRef.current?.value.trim() ?? "";
     //Si aucun texte ni image n'est fourni, ne rien faire
     if (!text && !selectedFile) return;
 
@@ -61,7 +69,9 @@ export default function App() {
         setChat((prev) => [...prev, { role: "Radin", content: "Error: AI service (image)" }]);
       } finally {
         setLoading(false);
-        inputRef.current.value = "";
+        if (inputRef.current) {
+          inputRef.current.value = "";
+        }
         effacerImage();
       }
       return;
@@ -69,7 +79,9 @@ export default function App() {
     
     //Sinon, envoyer la requête normale avec le texte uniquement
     setChat((prev) => [...prev, { role: "Toi", content: text }]);
-    inputRef.current.value = "";
+    if (inputRef.current) {
+      inputRef.current.value = "";
+    }
     setLoading(true);
 
     try {
@@ -91,13 +103,12 @@ export default function App() {
       <Paper variant="outlined" sx={{ p: 2, minHeight: 200 }}>
         {chat.map((m, i) => (
           <Box key={i} sx={{ mb: 1 }}>
-            <Typography
+            <Box
               component="span"
-              fontWeight="bold"
-              color={m.role === "Toi" ? "success.main" : "primary.main"}
+              sx={{ fontWeight: "bold", color: m.role === "Toi" ? "success.main" : "primary.main" }}
             >
               {m.role}:
-            </Typography>{" "}
+            </Box>{" "}
             <Typography component="span" sx={{ whiteSpace: "pre-wrap" }}>
               {m.content}
             </Typography>
@@ -137,7 +148,12 @@ export default function App() {
           placeholder="Tu veux quoi?"
           fullWidth
           size="small"
-          onKeyDown={(e) => e.key === "Enter" && send()}
+          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              void send();
+            }
+          }}
         />
         <input
           ref={fileRef}
