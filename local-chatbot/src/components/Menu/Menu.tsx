@@ -14,6 +14,9 @@ export default function Menu() {
           <Button color="inherit" component={Link} to="/">
             Chat
           </Button>
+          <Button color="inherit" component={Link} to="/categories">
+            Catégories
+          </Button>
           <Button color="inherit" component={Link} to="/depenses">
             Dépenses
           </Button>

@@ -4,6 +4,7 @@
   import axios from "axios";
   import dotenv from "dotenv";
   import multer from "multer";
+  import pool from "./db.js";
 
   dotenv.config();
 
@@ -21,6 +22,11 @@
   app.get("/health", (req, res) => {
     res.json({ ok: true, model: MODEL });
   });
+
+
+  //=======================
+  //Routes AI 
+  //=======================
 
   //Chat normal (texte uniquement)
   app.post("/chat", async (req, res) => {
@@ -103,6 +109,35 @@
       res.status(500).json({ error: "AI service error" });
     }
   });
+
+  //=======================
+  //Routes bd 
+  //=======================
+
+  //Récupérer toutes les catégories
+  app.get("/categories", async (req, res) => {
+    try {
+      const [rows] = await pool.query("SELECT * FROM categories");
+      res.json(rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur base de données" });
+    }
+  });
+
+  app.post("/categories/add", async (req, res) => {
+  try {
+    const nom  = req.body.nom;
+    const [result] = await pool.query(
+      "INSERT INTO categories (nom) VALUES (?)",
+      [nom]
+    );
+    res.json({ id: result.insertId, nom});
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Erreur insertion" });
+  }
+});
 
   //Démarrage du serveur
   app.listen(PORT, () => {

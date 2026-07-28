@@ -1,16 +1,20 @@
+DROP DATABASE IF EXISTS projet_radin;
+CREATE DATABASE projet_radin;
+USE projet_radin;
+
 CREATE TABLE categories (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT,
-  nom TEXT NOT NULL UNIQUE
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nom VARCHAR(50) NOT NULL UNIQUE
 );
 
 CREATE TABLE depenses (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT,
-  montant REAL NOT NULL,
-  categorie_id INTEGER NOT NULL,
-  date TEXT NOT NULL,           -- format 'AAAA-MM-JJ'
-  marchand TEXT,
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  montant DECIMAL(10,2) NOT NULL,
+  categorie_id INT NOT NULL,
+  date DATE NOT NULL,
+  marchand VARCHAR(100),
   description TEXT,
-  image_path TEXT,
+  image_path VARCHAR(255),
   FOREIGN KEY (categorie_id) REFERENCES categories(id)
 );
 
