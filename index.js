@@ -64,6 +64,7 @@
   app.post("/chat-image", upload.single("image"), async (req, res) => {
     try {
       const file = req.file;
+      const instructionUtilisateur = req.body?.content ?? "";
 
       //Vérifier si photo existe
       if (!file) {
@@ -87,7 +88,8 @@
         { "montant": 40.00, "categorie": "Essence", "date": "2026-07-28", "marchand": "Ultramar", "description": "Plein d'essence" }
       ]
 
-      Si une information est illisible ou absente, utilise null pour ce champ.`;
+      Si une information est illisible ou absente, utilise null pour ce champ.
+      ${instructionUtilisateur ? `\n\nInstruction supplémentaire de l'utilisateur (à respecter en plus des règles ci-dessus): ${instructionUtilisateur}` : ""}`;
 
       //Ollama veut les images en base64
       const base64Image = file.buffer.toString("base64");

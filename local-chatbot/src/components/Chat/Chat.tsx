@@ -28,6 +28,8 @@ export default function Chat() {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
+  const promptRef = useRef<HTMLInputElement | null>(null);
+
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -44,7 +46,9 @@ export default function Chat() {
   };
 
   const send = async () => {
-    const text = inputRef.current?.value.trim() ?? "";
+    const text = selectedFile
+    ? promptRef.current?.value.trim() ?? ""
+    : inputRef.current?.value.trim() ?? "";
     //Si aucun texte ni image n'est fourni, ne rien faire
     if (!text && !selectedFile) return;
 
@@ -58,7 +62,7 @@ export default function Chat() {
 
       const formData = new FormData();
       formData.append("image", selectedFile);
-      formData.append("content", text || "Décris cette image en détail.");
+      formData.append("content", text);
 
       try {
         const { data } = await axios.post(`${API_BASE}/chat-image`, formData, {
@@ -146,19 +150,30 @@ export default function Chat() {
         </Box>
       )}
 
-      <Box sx={{ display: "flex", gap: 1, mt: 1.5 }}>
-        <TextField
-          inputRef={inputRef}
-          placeholder="Tu veux quoi?"
-          fullWidth
-          size="small"
-          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              void send();
-            }
-          }}
-        />
+      <Box sx={{ display: "flex", gap: 1, mt: 1.5, alignItems: "flex-start" }}>
+        {imagePreview ? (
+          <TextField
+            inputRef={promptRef}
+            label="Instruction supplémentaire (optionnel)"
+            fullWidth
+            multiline
+            minRows={2}
+            size="small"
+          />
+        ) : (
+          <TextField
+            inputRef={inputRef}
+            placeholder="Tu veux quoi?"
+            fullWidth
+            size="small"
+            onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                void send();
+              }
+            }}
+          />
+        )}
         <input
           ref={fileRef}
           type="file"
@@ -176,7 +191,12 @@ export default function Chat() {
           Envoyer
         </Button>
       </Box>
+
+      <Typography variant="body2" color="text.secondary">
+        <em>Note: L'IA peut parfois se tromper...</em>
+      </Typography>
     </Box>
+    
   );
 }
 
