@@ -64,7 +64,11 @@ export default function Chat() {
         const { data } = await axios.post(`${API_BASE}/chat-image`, formData, {
           headers: { "Content-Type": "multipart/form-data" },
         });
-        setChat((prev) => [...prev, { role: "Radin", content: data?.data ?? "" }]);
+        //Juste pour récuperer la réponse json de l'API, on formate le contenu pour l'afficher correctement
+        const contenuFormatte =  Array.isArray(data?.data) || typeof data?.data === "object"
+          ? JSON.stringify(data.data, null, 2)
+          : data?.data ?? "";
+        setChat((prev) => [...prev, { role: "Radin", content: contenuFormatte }]);
       } catch (e) {
         setChat((prev) => [...prev, { role: "Radin", content: "Error: AI service (image)" }]);
       } finally {

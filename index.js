@@ -63,15 +63,50 @@
   //Chat avec image
   app.post("/chat-image", upload.single("image"), async (req, res) => {
     try {
-      const userMessage = req.body?.content ?? "Décris cette image.";
       const file = req.file;
 
+      //Vérifier si photo existe
       if (!file) {
-        return res.status(400).json({ error: "Missing 'image' file in form-data" });
+        return res.status(400).json({ error: "Aucune 'image' file in form-data" });
       }
+      
+    //Va chercher les catégories existantes pour ajouter dans le prompt
+    const [categories] = await pool.query("SELECT nom FROM categories");
+    const listeCategories = categories.map(categories => categories.nom).join(", ");
+
+      const promptSysteme =
+      `Tu es un extracteur de données financières. Cette image peut contenir UNE SEULE dépense (reçu) OU une LISTE de plusieurs transactions (historique bancaire).
+
+      IMPORTANT: Compte D'ABORD combien de transactions distinctes sont visibles dans l'image. Ensuite, retourne un tableau JSON avec EXACTEMENT un élément par transaction trouvée — même s'il y en a 5, 10, ou plus. Ne résume JAMAIS plusieurs transactions en une seule, sauf si l'image est un seul reçu détaillé représentant un seul achat total.
+      IMPORTANT: Je veux SEULEMENT les dépenses. Si l'image contient des revenus, ignore-les. Si l'image contient des dépenses et des revenus, retourne seulement les dépenses.  
+      Choisis la categorie parmi cette liste exacte: ${listeCategories}
+
+      Exemple avec 2 transactions:
+      [
+        { "montant": 1.71, "categorie": "Épicerie", "date": "2026-07-28", "marchand": "Depanneur Lafon", "description": "Achat dépanneur" },
+        { "montant": 40.00, "categorie": "Essence", "date": "2026-07-28", "marchand": "Ultramar", "description": "Plein d'essence" }
+      ]
+
+      Si une information est illisible ou absente, utilise null pour ce champ.`;
 
       //Ollama veut les images en base64
       const base64Image = file.buffer.toString("base64");
+
+      //Schéma JSON pour valider la réponse de l'IA
+      const schema = {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            montant: { type: ["number", "null"] },
+            categorie: { type: "string" },
+            date: { type: ["string", "null"] },
+            marchand: { type: ["string", "null"] },
+            description: { type: ["string", "null"] },
+          },
+          required: ["montant", "categorie", "date", "marchand", "description"],
+        },
+      };
 
       //Payload pour l'API Ollama
       const payload = {
@@ -80,13 +115,14 @@
         messages: [
           {
             role: "user",
-            content: userMessage,
+            content: promptSysteme,
             images: [base64Image],
           },
         ],
         stream: false,
+        format: schema, 
         options: {
-          num_ctx: 8192,
+          num_ctx: 16384,
         },
       };
 
@@ -96,13 +132,28 @@
       
       //Appel à l'API Ollama
       const { data } = await axios.post(`${OLLAMA_BASE_URL}/api/chat`, payload, {
-        timeout: 240_000, // les images prennent plus de temps à traiter
+        timeout: 360_000, //Les images prennent plus de temps à traiter
       });
+
+      //Log pour debug et vérifier la réponse brute de l'IA
+      const brut = data?.message?.content ?? "[]";
+   
+      console.log("=== Réponse brute de l'IA ===");
+      console.log(brut);
+      console.log("================================");
+
+      //Parse la réponse brute en JSON et s'assure que c'est un tableau pour faire l'insertion dans la base de données après
+      let resultat = JSON.parse(brut);
+
+      //Si la réponse n'est pas un tableau, on la transforme en tableau pour éviter les erreurs lors de l'insertion dans la base de données
+      if (!Array.isArray(resultat)) {
+        resultat = [resultat];
+      }
 
       //Réponse à l'utilisateur
       res.json({
         code: 1,
-        data: data?.message?.content ?? "",
+        data:resultat,
       });
     } catch (err) {
       console.error(err?.response?.data || err.message);
