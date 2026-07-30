@@ -14,12 +14,12 @@ export default function Categories() {
   const [nouveauNom, setNouveauNom] = useState("");
 
   useEffect(() => {
-    axios
-      .get<Category[]>(`${API_BASE}/categories`)
+    axios.get<Category[]>(`${API_BASE}/categories`)
       .then((res) => setCategories(res.data))
       .catch((err) => console.error(err));
   }, []);
 
+  //Fonction pour ajouter une nouvelle catégorie
   const AjouterCategorie = () => {
     if (nouveauNom) {
       axios

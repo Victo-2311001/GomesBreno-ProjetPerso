@@ -178,19 +178,42 @@
     }
   });
 
+  //Ajouter une nouvelle catégorie
   app.post("/categories/add", async (req, res) => {
-  try {
-    const nom  = req.body.nom;
-    const [result] = await pool.query(
-      "INSERT INTO categories (nom) VALUES (?)",
-      [nom]
-    );
-    res.json({ id: result.insertId, nom});
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Erreur insertion" });
-  }
-});
+    try {
+      const nom  = req.body.nom;
+      const [result] = await pool.query(
+        "INSERT INTO categories (nom) VALUES (?)",
+        [nom]
+      );
+      res.json({ id: result.insertId, nom});
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur insertion" });
+    }
+  });
+
+  //Récupérer toutes les dépenses
+  app.get("/depenses", async (req, res) => {
+    try {
+      const [rows] = await pool.query(`
+        SELECT 
+          depenses.id,
+          depenses.montant,
+          categories.nom AS categorie,
+          depenses.date,
+          depenses.marchand,
+          depenses.description
+        FROM depenses
+        JOIN categories ON depenses.categorie_id = categories.id
+        ORDER BY depenses.date DESC
+      `);
+      res.json(rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur récupération dépenses" });
+    }
+  });
 
   //Démarrage du serveur
   app.listen(PORT, () => {
