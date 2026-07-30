@@ -80,6 +80,7 @@
 
       IMPORTANT: Compte D'ABORD combien de transactions distinctes sont visibles dans l'image. Ensuite, retourne un tableau JSON avec EXACTEMENT un élément par transaction trouvée — même s'il y en a 5, 10, ou plus. Ne résume JAMAIS plusieurs transactions en une seule, sauf si l'image est un seul reçu détaillé représentant un seul achat total.
       IMPORTANT: Je veux SEULEMENT les dépenses. Si l'image contient des revenus, ignore-les. Si l'image contient des dépenses et des revenus, retourne seulement les dépenses.  
+      IMPORTANT: Retourne toujours le montant en valeur POSITIVE (sans signe négatif), même si le relevé bancaire affiche un montant négatif pour une dépense.
       Choisis la categorie parmi cette liste exacte: ${listeCategories}
 
       Exemple avec 2 transactions:

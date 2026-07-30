@@ -34,7 +34,10 @@ export default function Categories() {
 
   return (
     <Paper sx={{ maxWidth: 400, margin: "20px auto", padding: 2 }}>
-      <Typography variant="h6">Catégories</Typography>
+      <Typography variant="h4" gutterBottom>
+              Catégoriees
+      </Typography> 
+
       <List>
         {categories.map((categorie) => (
           <ListItem key={categorie.id}>

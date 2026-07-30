@@ -61,7 +61,16 @@ export default function Stats() {
     totauxParCategorie[d.categorie] += Number(d.montant);
   }
 
-  //Grouper les montants par mois  
+  //Chercher la quantité de dépenses par catégorie pour le mois sélectionné
+  const quantiteDepensesParCategorie: Record<string, number> = {};
+  for (const d of depensesDuMois) {
+    if (!quantiteDepensesParCategorie[d.categorie]) {
+      quantiteDepensesParCategorie[d.categorie] = 0;
+    }
+    quantiteDepensesParCategorie[d.categorie] += 1;
+  } 
+
+  //Chercher le total des dépenses du mois sélectionné
   const totauxMensuels: Record<string, number> = {};
   for (const d of depensesDuMois) {
     if (!totauxMensuels[moisSelectionne]) {
@@ -109,6 +118,9 @@ export default function Stats() {
                   {categorie}
                 </Typography>
                 <Typography variant="h6">{total.toFixed(2)} $</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {quantiteDepensesParCategorie[categorie]} dépense(s)
+                </Typography>
               </Button>
             </Paper>
           </Grid>

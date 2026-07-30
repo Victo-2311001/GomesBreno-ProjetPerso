@@ -18,6 +18,8 @@ type ChatMessage = {
   role: "Toi" | "Radin";
   content: string;
   image?: string | null;
+  depenses?: any[] | null;  
+  enregistre?: boolean;
 };
 
 export default function Chat() {
@@ -72,7 +74,10 @@ export default function Chat() {
         const contenuFormatte =  Array.isArray(data?.data) || typeof data?.data === "object"
           ? JSON.stringify(data.data, null, 2)
           : data?.data ?? "";
-        setChat((prev) => [...prev, { role: "Radin", content: contenuFormatte }]);
+
+        const depensesExtraites = Array.isArray(data?.data) ? data.data : null;
+
+        setChat((prev) => [...prev,     { role: "Radin", content: contenuFormatte, depenses: depensesExtraites, enregistre: false },]);
       } catch (e) {
         setChat((prev) => [...prev, { role: "Radin", content: "Error: AI service (image)" }]);
       } finally {
@@ -102,6 +107,22 @@ export default function Chat() {
     }
   };
 
+  //Fonction pour enregistrer les dépenses extraites par l'IA dans la base de données
+  const enregistrerDepenses = (index: number, depenses: any[]) => {
+  axios.post(`${API_BASE}/depenses/add`, { depenses })
+    .then(() => {
+      setChat((prev) => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], enregistre: true };
+        return copy;
+      });
+    })
+    .catch((err) => {
+      console.error(err);
+      alert("Erreur lors de l'enregistrement des dépenses.");
+    });
+};
+
   return (
     <Box sx={{ maxWidth: 680, margin: "40px auto", fontFamily: "system-ui, sans-serif" }}>
       <Typography variant="h4" gutterBottom>
@@ -127,6 +148,23 @@ export default function Chat() {
                   alt="upload"
                   style={{ maxWidth: 200, borderRadius: 6 }}
                 />
+              </Box>
+            )}
+            {m.depenses && m.depenses.length > 0 && (
+              <Box sx={{ mt: 1 }}>
+                {m.enregistre ? (
+                  <Typography variant="body2" color="success.main">
+                    ✓ {m.depenses.length} dépense(s) enregistrée(s)
+                  </Typography>
+                ) : (
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => enregistrerDepenses(i, m.depenses!)}
+                  >
+                    Enregistrer {m.depenses.length} dépense(s) dans la BD
+                  </Button>
+                )}
               </Box>
             )}
           </Box>
@@ -196,7 +234,6 @@ export default function Chat() {
         <em>Note: L'IA peut parfois se tromper...</em>
       </Typography>
     </Box>
-    
   );
 }
 
