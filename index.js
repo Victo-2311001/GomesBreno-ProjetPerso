@@ -193,6 +193,27 @@
     }
   });
 
+  //Ajouter les dépenses extraites par l'IA dans la base de données
+  app.post("/depenses/add", async (req, res) => {
+    try {
+      const depenses = req.body.depenses;
+
+      const insertPromises = depenses.map(depense => {
+        const { montant, categorie, date, marchand, description } = depense;
+        return pool.query(
+          "INSERT INTO depenses (montant, categorie_id, date, marchand, description) VALUES (?, (SELECT id FROM categories WHERE nom = ?), ?, ?, ?)",
+          [montant, categorie, date, marchand, description]
+        );
+      });
+
+      await Promise.all(insertPromises);
+      res.json({ message: "Dépenses ajoutées avec succès" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur insertion dépenses" });
+    }   
+  });
+
   //Récupérer toutes les dépenses
   app.get("/depenses", async (req, res) => {
     try {
