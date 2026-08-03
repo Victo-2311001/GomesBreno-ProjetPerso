@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, TextField, Paper, Grid } from "@mui/material";
+import { Box, Typography, TextField, Paper, Grid, IconButton, Select, MenuItem, FormControl, InputLabel} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -21,6 +23,8 @@ type Depense = {
   description: string | null;
 };
 
+type Category = { id: number; nom: string };
+
 export default function Stats() {
   const [depenses, setDepenses] = useState<Depense[]>([]);
   const [moisSelectionne, setMoisSelectionne] = useState<string>(
@@ -29,11 +33,23 @@ export default function Stats() {
 
   //Catégorie actuellement sélectionnée pour le dialog (null = fermé)
   const [categorieSelectionnee, setCategorieSelectionnee] = useState<string | null>(null);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  //Variables pour l'édition d'une dépense
+  const [depenseEnEdition, setDepenseEnEdition] = useState<Depense | null>(null);
+  const [montantEdit, setMontantEdit] = useState("");
+  const [marchandEdit, setMarchandEdit] = useState("");
+  const [descriptionEdit, setDescriptionEdit] = useState("");
+  const [categorieEdit, setCategorieEdit] = useState("");
+
 
   //Récupérer les dépenses 
   useEffect(() => {
     axios.get<Depense[]>(`${API_BASE}/depenses`)
       .then(({ data }) => { setDepenses(data); });
+
+    axios.get<Category[]>(`${API_BASE}/categories`)
+      .then(({ data }) => setCategories(data));
   }, []);
 
   const handleClickOpen = (categorie: string) => () => {
@@ -88,6 +104,56 @@ export default function Stats() {
       }
     }
   }
+
+  const ouvrirEdition = (d: Depense) => {
+    setDepenseEnEdition(d);
+    setMontantEdit(String(d.montant));
+    setMarchandEdit(d.marchand ?? "");
+    setDescriptionEdit(d.description ?? "");
+    setCategorieEdit(d.categorie);
+  };
+
+  const fermerEdition = () => {
+    setDepenseEnEdition(null);
+  };
+
+  const sauvegarderEdition = () => {
+    if (!depenseEnEdition) return;
+
+    axios.put(`${API_BASE}/depenses/${depenseEnEdition.id}`, {
+      marchand: marchandEdit,
+      montant: parseFloat(montantEdit),
+      description: descriptionEdit,
+      categorie: categorieEdit, 
+    }).then(() => {
+      //Met à jour la liste locale sans devoir tout recharger
+      setDepenses((prev) =>
+        prev.map((d) =>
+          d.id === depenseEnEdition.id
+            ? { ...d, marchand: marchandEdit, montant: parseFloat(montantEdit), description: descriptionEdit }
+            : d
+        )
+      );
+      fermerEdition();
+    }).catch((err) => {
+      console.error(err);
+      alert("Erreur lors de la modification.");
+    });
+  };
+
+  const supprimerDepense = (id: number) => {
+    if (!window.confirm("Voulez-vous vraiment supprimer cette dépense ?")) return;
+
+    axios.delete(`${API_BASE}/depenses/${id}`)
+      .then(() => {
+        //Enlever la dépense de la liste locale sans devoir tout recharger
+        setDepenses((prev) => prev.filter((d) => d.id !== id));
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Erreur lors de la suppression.");
+      });
+  };
 
   return (
     <Box sx={{ maxWidth: 680, margin: "40px auto" }}>
@@ -145,14 +211,26 @@ export default function Stats() {
         <DialogContent dividers>
           <List>
             {depensesDeLaCategorie.map((d) => (
-              <ListItem key={d.id} divider>
+              <ListItem
+                key={d.id}
+                divider
+                secondaryAction={
+                  <Box sx={{ display: "flex", gap: 1 }}>
+                    <IconButton edge="end" onClick={() => ouvrirEdition(d)}>
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton edge="end" onClick={() => supprimerDepense(d.id)}>
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
+                }
+              >
                 <ListItemText
                   primary={`${d.marchand ?? "Marchand inconnu"} — ${Number(d.montant).toFixed(2)} $`}
                   secondary={`${d.date}${d.description ? " — " + d.description : ""}`}
                 />
               </ListItem>
             ))}
-
             {depensesDeLaCategorie.length === 0 && (
               <Typography color="text.secondary">
                 Aucune dépense trouvée.
@@ -162,6 +240,51 @@ export default function Stats() {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose}>Fermer</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={depenseEnEdition !== null} onClose={fermerEdition} fullWidth maxWidth="xs">
+        <DialogTitle>Modifier la dépense</DialogTitle>
+        <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          <TextField
+            label="Marchand"
+            value={marchandEdit}
+            onChange={(e) => setMarchandEdit(e.target.value)}
+            fullWidth
+          />
+          <TextField
+            label="Montant"
+            type="number"
+            value={montantEdit}
+            onChange={(e) => setMontantEdit(e.target.value)}
+            fullWidth
+          />
+          <FormControl fullWidth>
+            <InputLabel>Catégorie</InputLabel>
+            <Select
+              value={categorieEdit}
+              label="Catégorie"
+              onChange={(e) => setCategorieEdit(e.target.value)}
+            >
+              {categories.map((c) => (
+                <MenuItem key={c.id} value={c.nom}>
+                  {c.nom}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Description"
+            value={descriptionEdit}
+            onChange={(e) => setDescriptionEdit(e.target.value)}
+            fullWidth
+            multiline
+            minRows={2}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={fermerEdition}>Annuler</Button>
+          <Button onClick={sauvegarderEdition} variant="contained">Enregistrer</Button>
         </DialogActions>
       </Dialog>
     </Box>

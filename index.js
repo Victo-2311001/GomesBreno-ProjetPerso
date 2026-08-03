@@ -237,6 +237,37 @@
     }
   });
 
+  //Modifier une dépense existante
+  app.put("/depenses/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { marchand, montant, description, categorie } = req.body;
+
+      await pool.query(
+        "UPDATE depenses SET marchand = ?, montant = ?, description = ?, categorie_id = (SELECT id FROM categories WHERE nom = ?) WHERE id = ?",
+        [marchand, montant, description, categorie, id]
+      );
+
+      res.json({ message: "Dépense modifiée avec succès" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur modification dépense" });
+    }
+  });
+
+  //Supprimer une dépense
+  app.delete("/depenses/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      await pool.query("DELETE FROM depenses WHERE id = ?", [id]);
+      res.json({ message: "Dépense supprimée avec succès" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ error: "Erreur suppression dépense" });
+    }
+  });
+
   //Démarrage du serveur
   app.listen(PORT, () => {
     console.log(`Express API: http://localhost:${PORT}`);
