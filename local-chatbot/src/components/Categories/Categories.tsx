@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { List, ListItem, ListItemText, Paper, TextField, Typography } from "@mui/material";
+// AJOUT: Button MUI pour remplacer le <button> HTML natif (juste visuel, même fonction onClick)
+import { List, ListItem, ListItemText, Paper, TextField, Typography, Button } from "@mui/material";
 
 type Category = {
   id: number;
@@ -13,14 +14,12 @@ export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [nouveauNom, setNouveauNom] = useState("");
 
-  //Récupérer les catégories depuis l'API
   useEffect(() => {
     axios.get<Category[]>(`${API_BASE}/categories`)
       .then((res) => setCategories(res.data))
       .catch((err) => console.error(err));
   }, []);
 
-  //Fonction pour ajouter une nouvelle catégorie
   const AjouterCategorie = () => {
     if (nouveauNom) {
       axios
@@ -34,7 +33,8 @@ export default function Categories() {
   };
 
   return (
-    <Paper sx={{ maxWidth: 400, margin: "20px auto", padding: 2 }}>
+    // AJOUT: fond de carte cohérent avec le thème sombre
+    <Paper sx={{ maxWidth: 400, margin: "20px auto", padding: 2, backgroundColor: "background.paper" }}>
       <Typography variant="h4" gutterBottom>
               Catégoriees
       </Typography> 
@@ -54,8 +54,13 @@ export default function Categories() {
             slotProps={{ htmlInput: { maxLength: 100 } }}
             placeholder="Nom"
             fullWidth
+            // AJOUT: espacement sous le champ pour séparer du bouton
+            sx={{ mb: 1, mt: 1 }}
           />
-        <button onClick={AjouterCategorie}>Ajouter une catégorie</button>
+        {/* AJOUT: Button MUI variant="contained" au lieu du <button> HTML natif, même onClick */}
+        <Button onClick={AjouterCategorie} variant="contained" fullWidth>
+          Ajouter une catégorie
+        </Button>
     </Paper>
   );
 }

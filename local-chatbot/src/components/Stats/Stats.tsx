@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { Box, Typography, TextField, Paper, Grid, IconButton, Select, MenuItem, FormControl, InputLabel, Checkbox} from "@mui/material";
+// AJOUT: Chip pour badge visuel "pour quelqu'un d'autre" / "revenu"
+import Chip from "@mui/material/Chip";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
@@ -32,11 +34,9 @@ export default function Stats() {
     new Date().toISOString().slice(0, 7)
   );
 
-  //Catégorie actuellement sélectionnée pour le dialog (null = fermé)
   const [categorieSelectionnee, setCategorieSelectionnee] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
 
-  //Variables pour l'édition d'une dépense
   const [depenseEnEdition, setDepenseEnEdition] = useState<Depense | null>(null);
   const [montantEdit, setMontantEdit] = useState("");
   const [marchandEdit, setMarchandEdit] = useState("");
@@ -45,7 +45,6 @@ export default function Stats() {
   const [pourQuelquUnAutreEdit, setPourQuelquUnAutreEdit] = useState(false);
 
 
-  //Récupérer les dépenses 
   useEffect(() => {
     axios.get<Depense[]>(`${API_BASE}/depenses`)
       .then(({ data }) => { setDepenses(data); });
@@ -62,7 +61,6 @@ export default function Stats() {
     setCategorieSelectionnee(null);
   };
 
-  //Filtrer les dépenses du mois sélectionné
   const depensesDuMois: Depense[] = [];
   for (const d of depenses) {
     if (d.date && d.date.startsWith(moisSelectionne)) {
@@ -70,7 +68,6 @@ export default function Stats() {
     }
   }
 
-  //Grouper les montants par catégorie
   const totauxParCategorie: Record<string, number> = {};
   for (const d of depensesDuMois) {
     if (!totauxParCategorie[d.categorie]) {
@@ -80,7 +77,6 @@ export default function Stats() {
     totauxParCategorie[d.categorie] += Number(d.montant);
   }
 
-  //Chercher la quantité de dépenses par catégorie pour le mois sélectionné
   const quantiteDepensesParCategorie: Record<string, number> = {};
   for (const d of depensesDuMois) {
     if (!quantiteDepensesParCategorie[d.categorie]) {
@@ -89,7 +85,6 @@ export default function Stats() {
     quantiteDepensesParCategorie[d.categorie] += 1;
   } 
 
-  //Chercher le total des dépenses pour quelqu'un d'autre par catégorie
   let totalPourAutresMensuel = 0;
   for (const d of depensesDuMois) {
     if (d.pourQuelquUnAutre) {
@@ -108,10 +103,8 @@ export default function Stats() {
   }
     
 
-  //Chercher le total des dépenses du mois sélectionné
   const totauxMensuels: Record<string, number> = {};
   for (const d of depensesDuMois) {
-    //Ne pas inclure les revenus dans le total des dépenses par catégorie
     if (d.categorie === "Revenus") {
       continue;
     }
@@ -121,7 +114,16 @@ export default function Stats() {
     totauxMensuels[moisSelectionne] += Number(d.montant);
   }
 
-  //Dépenses de la catégorie actuellement affichée dans le dialog
+  const totauxRevenusMensuels: Record<string, number> = {};
+  for (const d of depensesDuMois) {
+    if (d.categorie === "Revenus") {  
+      if (!totauxRevenusMensuels[moisSelectionne]) {
+        totauxRevenusMensuels[moisSelectionne] = 0;
+      }
+      totauxRevenusMensuels[moisSelectionne] += Number(d.montant);
+    }
+  }
+
   const depensesDeLaCategorie: Depense[] = [];
   if (categorieSelectionnee) {
     for (const d of depensesDuMois) {
@@ -144,7 +146,6 @@ export default function Stats() {
     setDepenseEnEdition(null);
   };
 
-  //Sauvegarder les modifications d'une dépense
   const sauvegarderEdition = () => {
     if (!depenseEnEdition) return;
 
@@ -155,7 +156,6 @@ export default function Stats() {
       categorie: categorieEdit,
       pourQuelquUnAutre: pourQuelquUnAutreEdit
     }).then(() => {
-      //Met à jour la liste locale sans devoir tout recharger
       setDepenses((prev) =>
         prev.map((d) =>
           d.id === depenseEnEdition.id
@@ -170,13 +170,11 @@ export default function Stats() {
     });
   };
 
-  //Supprimer une dépense
   const supprimerDepense = (id: number) => {
     if (!window.confirm("Voulez-vous vraiment supprimer cette dépense ?")) return;
 
     axios.delete(`${API_BASE}/depenses/${id}`)
       .then(() => {
-        //Enlever la dépense de la liste locale sans devoir tout recharger
         setDepenses((prev) => prev.filter((d) => d.id !== id));
       })
       .catch((err) => {
@@ -186,7 +184,7 @@ export default function Stats() {
   };
 
   return (
-    <Box sx={{ maxWidth: 680, margin: "40px auto" }}>
+    <Box sx={{ maxWidth: 680, margin: "40px auto", px: 2 }}>
       <Typography variant="h4" gutterBottom>
         Statistiques
       </Typography>
@@ -200,30 +198,53 @@ export default function Stats() {
       />
 
       {totauxMensuels[moisSelectionne] !== undefined &&
-        <Typography variant="h6" gutterBottom>
-          Total: {totauxMensuels[moisSelectionne].toFixed(2)} $
-          <Typography variant="body2" color="text.secondary">
+        // AJOUT: mise en page en carte + couleurs sémantiques (rouge = dépenses, vert = revenus, orange = pour d'autres)
+        <Paper variant="outlined" sx={{ p: 2, mb: 3, backgroundColor: "background.paper" }}>
+          <Typography variant="h6" sx={{ color: "error.main", fontWeight: 700 }}>
+            Total dépenses: {totauxMensuels[moisSelectionne].toFixed(2)} $
+          </Typography>
+          {totauxRevenusMensuels[moisSelectionne] !== undefined && (
+            // AJOUT: affichage du total des revenus, en vert, à côté du total des dépenses
+            <Typography variant="body1" sx={{ color: "success.main", fontWeight: 600 }}>
+              Total revenus: {totauxRevenusMensuels[moisSelectionne].toFixed(2)} $
+            </Typography>
+          )}
+          <Typography variant="body2" sx={{ color: "warning.main" }}>
             *Total pour quelqu'un d'autre: {totalPourAutresMensuel.toFixed(2)} $
           </Typography>
-        </Typography>
+        </Paper>
       }
 
       <Grid container spacing={2}>
         {Object.entries(totauxParCategorie).map(([categorie, total]) => (
           <Grid key={categorie} size={{ xs: 6, sm: 4 }}>
-            <Paper variant="outlined">
-              <Button onClick={handleClickOpen(categorie)} sx={{ width: "100%", p: 2, flexDirection: "column" }}>
+            {/* AJOUT: bordure colorée selon le type de catégorie (revenu vs dépense) */}
+            <Paper
+              variant="outlined"
+              sx={{
+                borderColor: categorie === "Revenus" ? "success.main" : "error.main",
+                borderWidth: 1.5,
+                backgroundColor: "background.paper",
+              }}
+            >
+              <Button onClick={handleClickOpen(categorie)} sx={{ width: "100%", p: 2, flexDirection: "column", color: "text.primary" }}>
                 <Typography variant="subtitle2" color="text.secondary">
                   {categorie}
                 </Typography>
-                <Typography variant="h6">{total.toFixed(2)} $</Typography>
+                {/* AJOUT: couleur du montant selon revenu/dépense */}
+                <Typography variant="h6" sx={{ color: categorie === "Revenus" ? "success.main" : "error.main" }}>
+                  {total.toFixed(2)} $
+                </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {quantiteDepensesParCategorie[categorie]} Item(s)
                 </Typography>
                 {totauxDepensesAutres[categorie] !== undefined && (
-                  <Typography variant="caption" color="text.secondary">
-                    dont {totauxDepensesAutres[categorie].toFixed(2)} $ pour quelqu'un d'autre
-                  </Typography>
+                  // AJOUT: Chip orange pour signaler visuellement la portion "pour quelqu'un d'autre"
+                  <Chip
+                    size="small"
+                    label={`${totauxDepensesAutres[categorie].toFixed(2)} $ pour d'autres`}
+                    sx={{ mt: 0.5, backgroundColor: "warning.main", color: "#000" }}
+                  />
                 )}
               </Button>
             </Paper>
@@ -264,7 +285,15 @@ export default function Stats() {
                 }
               >
                 <ListItemText
-                  primary={`${d.marchand ?? "Marchand inconnu"} — ${Number(d.montant).toFixed(2)} $`}
+                  primary={
+                    // AJOUT: petit Chip orange en ligne si la dépense est pour quelqu'un d'autre
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <span>{`${d.marchand ?? "Marchand inconnu"} — ${Number(d.montant).toFixed(2)} $`}</span>
+                      {d.pourQuelquUnAutre && (
+                        <Chip size="small" label="Pour un autre" sx={{ backgroundColor: "warning.main", color: "#000" }} />
+                      )}
+                    </Box>
+                  }
                   secondary={`${d.date}${d.description ? " — " + d.description : ""}`}
                 />
               </ListItem>
@@ -324,6 +353,8 @@ export default function Stats() {
             <Checkbox
               checked={pourQuelquUnAutreEdit}
               onChange={(e) => setPourQuelquUnAutreEdit(e.target.checked)}
+              // AJOUT: la case cochée devient orange pour rester cohérent avec le code couleur "pour d'autres"
+              sx={{ color: "warning.main", "&.Mui-checked": { color: "warning.main" } }}
             />
           </Typography>
         </DialogContent>
@@ -335,5 +366,3 @@ export default function Stats() {
     </Box>
   );
 }
-
-//Utilisation de https://mui.com/material-ui/react-dialog/ pour l'affichage des détails d'une catégorie
