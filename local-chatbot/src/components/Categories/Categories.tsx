@@ -13,6 +13,7 @@ export default function Categories() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [nouveauNom, setNouveauNom] = useState("");
 
+  //Récupérer les catégories depuis l'API
   useEffect(() => {
     axios.get<Category[]>(`${API_BASE}/categories`)
       .then((res) => setCategories(res.data))

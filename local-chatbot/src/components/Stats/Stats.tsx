@@ -117,6 +117,7 @@ export default function Stats() {
     setDepenseEnEdition(null);
   };
 
+  //Sauvegarder les modifications d'une dépense
   const sauvegarderEdition = () => {
     if (!depenseEnEdition) return;
 
@@ -141,6 +142,7 @@ export default function Stats() {
     });
   };
 
+  //Supprimer une dépense
   const supprimerDepense = (id: number) => {
     if (!window.confirm("Voulez-vous vraiment supprimer cette dépense ?")) return;
 

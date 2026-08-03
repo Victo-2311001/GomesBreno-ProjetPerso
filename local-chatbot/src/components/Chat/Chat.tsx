@@ -1,24 +1,30 @@
-import { useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import axios from "axios";
 import {
-  Box,
-  Paper,
-  TextField,
-  Button,
-  IconButton,
-  Typography,
-  CircularProgress,
+  Box, Paper, TextField, Button, IconButton, Typography, CircularProgress,
+  Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
+  Select, MenuItem,
 } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import CloseIcon from "@mui/icons-material/Close";
 
 const API_BASE = "http://localhost:3001";
 
+type DepenseExtraite = {
+  montant: number | null;
+  categorie: string;
+  date: string | null;
+  marchand: string | null;
+  description: string | null;
+};
+
+type Category = { id: number; nom: string };
+
 type ChatMessage = {
   role: "Toi" | "Radin";
   content: string;
   image?: string | null;
-  depenses?: any[] | null;  
+  depenses?: DepenseExtraite[] | null;  
   enregistre?: boolean;
 };
 
@@ -32,6 +38,15 @@ export default function Chat() {
 
   const promptRef = useRef<HTMLInputElement | null>(null);
 
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  //Récupérer les catégories
+  useEffect(() => {
+    axios.get<Category[]>(`${API_BASE}/categories`)
+      .then(({ data }) => setCategories(data));
+  }, []);
+
+  //Fonction pour gérer le changement de fichier sélectionné
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -39,6 +54,7 @@ export default function Chat() {
     setImagePreview(URL.createObjectURL(file));
   };
 
+  //Fonction pour effacer l'image sélectionnée
   const effacerImage = () => {
     setSelectedFile(null);
     setImagePreview(null);
@@ -47,6 +63,25 @@ export default function Chat() {
     }
   };
 
+  //Fonction pour modifier une dépense extraite par l'IA dans le chat
+  const modifierDepense = (
+    indexMessage: number,
+    indexDepense: number,
+    champ: keyof DepenseExtraite,
+    valeur: any
+  ) => {
+    setChat((prev) => {
+      const copy = [...prev];
+      const message = { ...copy[indexMessage] };
+      const depenses = [...(message.depenses ?? [])];
+      depenses[indexDepense] = { ...depenses[indexDepense], [champ]: valeur };
+      message.depenses = depenses;
+      copy[indexMessage] = message;
+      return copy;
+    });
+  };
+
+  //Fonction pour envoyer le message (texte ou image) à l'API
   const send = async () => {
     const text = selectedFile
     ? promptRef.current?.value.trim() ?? ""
@@ -138,9 +173,73 @@ export default function Chat() {
             >
               {m.role}:
             </Box>{" "}
-            <Typography component="span" sx={{ whiteSpace: "pre-wrap" }}>
-              {m.content}
-            </Typography>
+            {m.depenses && m.depenses.length > 0 ? (
+              <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Montant</TableCell>
+                      <TableCell>Catégorie</TableCell>
+                      <TableCell>Date</TableCell>
+                      <TableCell>Marchand</TableCell>
+                      <TableCell>Description</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {m.depenses.map((d, j) => (
+                      <TableRow key={j}>
+                        <TableCell>
+                          <TextField
+                            type="number"
+                            size="small"
+                            value={d.montant ?? ""}
+                            onChange={(e) => modifierDepense(i, j, "montant", parseFloat(e.target.value))}
+                            sx={{ width: 90 }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Select
+                            size="small"
+                            value={d.categorie ?? ""}
+                            onChange={(e) => modifierDepense(i, j, "categorie", e.target.value)}
+                          >
+                            {categories.map((c) => (
+                              <MenuItem key={c.id} value={c.nom}>{c.nom}</MenuItem>
+                            ))}
+                          </Select>
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            type="date"
+                            size="small"
+                            value={d.date ?? ""}
+                            onChange={(e) => modifierDepense(i, j, "date", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            value={d.marchand ?? ""}
+                            onChange={(e) => modifierDepense(i, j, "marchand", e.target.value)}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <TextField
+                            size="small"
+                            value={d.description ?? ""}
+                            onChange={(e) => modifierDepense(i, j, "description", e.target.value)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            ) : (
+              <Typography component="span" sx={{ whiteSpace: "pre-wrap" }}>
+                {m.content}
+              </Typography>
+            )}
             {m.image && (
               <Box sx={{ mt: 0.5 }}>
                 <img
