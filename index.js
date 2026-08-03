@@ -79,7 +79,7 @@
       `Tu es un extracteur de données financières. Cette image peut contenir UNE SEULE dépense (reçu) OU une LISTE de plusieurs transactions (historique bancaire).
 
       IMPORTANT: Compte D'ABORD combien de transactions distinctes sont visibles dans l'image. Ensuite, retourne un tableau JSON avec EXACTEMENT un élément par transaction trouvée — même s'il y en a 5, 10, ou plus. Ne résume JAMAIS plusieurs transactions en une seule, sauf si l'image est un seul reçu détaillé représentant un seul achat total.
-      IMPORTANT: Je veux SEULEMENT les dépenses. Si l'image contient des revenus, ignore-les. Si l'image contient des dépenses et des revenus, retourne seulement les dépenses.  
+      IMPORTANT: N'importe quelle entrée d'argent est considérée comme un revenu et doit être dans la catégorie "Revenus".
       IMPORTANT: Retourne toujours le montant en valeur POSITIVE (sans signe négatif), même si le relevé bancaire affiche un montant négatif pour une dépense.
       Choisis la categorie parmi cette liste exacte: ${listeCategories}
 
@@ -225,7 +225,8 @@
           categories.nom AS categorie,
           depenses.date,
           depenses.marchand,
-          depenses.description
+          depenses.description,
+          depenses.pour_quelquun_autre AS pourQuelquUnAutre
         FROM depenses
         JOIN categories ON depenses.categorie_id = categories.id
         ORDER BY depenses.date DESC
@@ -241,11 +242,11 @@
   app.put("/depenses/:id", async (req, res) => {
     try {
       const { id } = req.params;
-      const { marchand, montant, description, categorie } = req.body;
+      const { marchand, montant, description, categorie, pourQuelquUnAutre } = req.body;
 
       await pool.query(
-        "UPDATE depenses SET marchand = ?, montant = ?, description = ?, categorie_id = (SELECT id FROM categories WHERE nom = ?) WHERE id = ?",
-        [marchand, montant, description, categorie, id]
+        "UPDATE depenses SET marchand = ?, montant = ?, description = ?, categorie_id = (SELECT id FROM categories WHERE nom = ?), pour_quelquun_autre = ? WHERE id = ?",
+        [marchand, montant, description, categorie, pourQuelquUnAutre, id]
       );
 
       res.json({ message: "Dépense modifiée avec succès" });

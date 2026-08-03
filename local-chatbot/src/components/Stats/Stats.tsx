@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Box, Typography, TextField, Paper, Grid, IconButton, Select, MenuItem, FormControl, InputLabel} from "@mui/material";
+import { Box, Typography, TextField, Paper, Grid, IconButton, Select, MenuItem, FormControl, InputLabel, Checkbox} from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import axios from "axios";
@@ -21,6 +21,7 @@ type Depense = {
   date: string;
   marchand: string | null;
   description: string | null;
+  pourQuelquUnAutre: boolean;
 };
 
 type Category = { id: number; nom: string };
@@ -41,6 +42,7 @@ export default function Stats() {
   const [marchandEdit, setMarchandEdit] = useState("");
   const [descriptionEdit, setDescriptionEdit] = useState("");
   const [categorieEdit, setCategorieEdit] = useState("");
+  const [pourQuelquUnAutreEdit, setPourQuelquUnAutreEdit] = useState(false);
 
 
   //Récupérer les dépenses 
@@ -86,6 +88,25 @@ export default function Stats() {
     quantiteDepensesParCategorie[d.categorie] += 1;
   } 
 
+  //Chercher le total des dépenses pour quelqu'un d'autre par catégorie
+  let totalPourAutresMensuel = 0;
+  for (const d of depensesDuMois) {
+    if (d.pourQuelquUnAutre) {
+      totalPourAutresMensuel += Number(d.montant);
+    }
+  }
+
+  const totauxDepensesAutres: Record<string, number> = {};
+  for (const d of depensesDuMois) {
+    if (d.pourQuelquUnAutre) {
+      if (!totauxDepensesAutres[d.categorie]) {
+        totauxDepensesAutres[d.categorie] = 0;
+      }
+      totauxDepensesAutres[d.categorie] += Number(d.montant);
+    }
+  }
+    
+
   //Chercher le total des dépenses du mois sélectionné
   const totauxMensuels: Record<string, number> = {};
   for (const d of depensesDuMois) {
@@ -111,6 +132,7 @@ export default function Stats() {
     setMarchandEdit(d.marchand ?? "");
     setDescriptionEdit(d.description ?? "");
     setCategorieEdit(d.categorie);
+    setPourQuelquUnAutreEdit(d.pourQuelquUnAutre);
   };
 
   const fermerEdition = () => {
@@ -125,13 +147,14 @@ export default function Stats() {
       marchand: marchandEdit,
       montant: parseFloat(montantEdit),
       description: descriptionEdit,
-      categorie: categorieEdit, 
+      categorie: categorieEdit,
+      pourQuelquUnAutre: pourQuelquUnAutreEdit
     }).then(() => {
       //Met à jour la liste locale sans devoir tout recharger
       setDepenses((prev) =>
         prev.map((d) =>
           d.id === depenseEnEdition.id
-            ? { ...d, marchand: marchandEdit, montant: parseFloat(montantEdit), description: descriptionEdit }
+            ? { ...d, marchand: marchandEdit, montant: parseFloat(montantEdit), description: descriptionEdit, pourQuelquUnAutre: pourQuelquUnAutreEdit }
             : d
         )
       );
@@ -174,6 +197,9 @@ export default function Stats() {
       {totauxMensuels[moisSelectionne] !== undefined &&
         <Typography variant="h6" gutterBottom>
           Total: {totauxMensuels[moisSelectionne].toFixed(2)} $
+          <Typography variant="body2" color="text.secondary">
+            *Total pour quelqu'un d'autre: {totalPourAutresMensuel.toFixed(2)} $
+          </Typography>
         </Typography>
       }
 
@@ -189,6 +215,11 @@ export default function Stats() {
                 <Typography variant="body2" color="text.secondary">
                   {quantiteDepensesParCategorie[categorie]} dépense(s)
                 </Typography>
+                {totauxDepensesAutres[categorie] !== undefined && (
+                  <Typography variant="caption" color="text.secondary">
+                    dont {totauxDepensesAutres[categorie].toFixed(2)} $ pour quelqu'un d'autre
+                  </Typography>
+                )}
               </Button>
             </Paper>
           </Grid>
@@ -197,7 +228,7 @@ export default function Stats() {
         {Object.keys(totauxParCategorie).length === 0 && (
           <Grid size={12}>
             <Typography color="text.secondary">
-              Aucune dépense pour ce mois.
+              Aucun revenu ou dépense pour ce mois.
             </Typography>
           </Grid>
         )}
@@ -283,6 +314,13 @@ export default function Stats() {
             multiline
             minRows={2}
           />
+          <Typography variant="body2" color="text.secondary">
+            Cochez si la dépense a été faite pour quelqu'un d'autre.
+            <Checkbox
+              checked={pourQuelquUnAutreEdit}
+              onChange={(e) => setPourQuelquUnAutreEdit(e.target.checked)}
+            />
+          </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={fermerEdition}>Annuler</Button>

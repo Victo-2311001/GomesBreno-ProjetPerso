@@ -217,14 +217,14 @@ export default function Chat() {
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField
+                          <TextField sx={{ width: 170 }}
                             size="small"
                             value={d.marchand ?? ""}
                             onChange={(e) => modifierDepense(i, j, "marchand", e.target.value)}
                           />
                         </TableCell>
                         <TableCell>
-                          <TextField
+                          <TextField sx={{ width: 170 }}
                             size="small"
                             value={d.description ?? ""}
                             onChange={(e) => modifierDepense(i, j, "description", e.target.value)}
