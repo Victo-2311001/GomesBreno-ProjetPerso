@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 // AJOUT: Button MUI pour remplacer le <button> HTML natif (juste visuel, même fonction onClick)
 import { List, ListItem, ListItemText, Paper, TextField, Typography, Button } from "@mui/material";
-
-type Category = {
-  id: number;
-  nom: string;
-};
+import Category from "../../types/Category/Category";
 
 const API_BASE = "http://localhost:3001";
 

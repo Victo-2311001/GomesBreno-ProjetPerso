@@ -7,26 +7,11 @@ import {
 } from "@mui/material";
 import PhotoCameraIcon from "@mui/icons-material/PhotoCamera";
 import CloseIcon from "@mui/icons-material/Close";
+import DepenseExtraite from "../../types/Depense/DepenseExtraite";
+import Category from "../../types/Category/Category";
+import ChatMessage from "../../types/Chat/ChatMessage";
 
 const API_BASE = "http://localhost:3001";
-
-type DepenseExtraite = {
-  montant: number | null;
-  categorie: string;
-  date: string | null;
-  marchand: string | null;
-  description: string | null;
-};
-
-type Category = { id: number; nom: string };
-
-type ChatMessage = {
-  role: "Toi" | "Radin";
-  content: string;
-  image?: string | null;
-  depenses?: DepenseExtraite[] | null;  
-  enregistre?: boolean;
-};
 
 export default function Chat() {
   const inputRef = useRef<HTMLInputElement | null>(null);

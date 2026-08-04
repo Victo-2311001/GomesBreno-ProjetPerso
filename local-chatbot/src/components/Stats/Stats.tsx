@@ -13,20 +13,10 @@ import DialogTitle from '@mui/material/DialogTitle';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
+import Depense from "../../types/Depense/Depense";
+import Category from "../../types/Category/Category";
 
 const API_BASE = "http://localhost:3001";
-
-type Depense = {
-  id: number;
-  montant: number;
-  categorie: string;
-  date: string;
-  marchand: string | null;
-  description: string | null;
-  pourQuelquUnAutre: boolean;
-};
-
-type Category = { id: number; nom: string };
 
 export default function Stats() {
   const [depenses, setDepenses] = useState<Depense[]>([]);
