@@ -377,3 +377,5 @@ export default function Stats() {
     </Box>
   );
 }
+
+//Consultation et utilisation de l'IA (Claude) pendant la phase de développement su projet.

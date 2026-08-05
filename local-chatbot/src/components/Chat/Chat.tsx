@@ -282,7 +282,7 @@ export default function Chat() {
           {message}
         </Typography>
       )}
-      
+
       {imagePreview && (
         <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
           <img src={imagePreview} alt="preview" style={{ maxWidth: 120, borderRadius: 6 }} />
@@ -342,3 +342,4 @@ export default function Chat() {
 }
 
 //Consultation du site: https://jsdev.space/local-ai-ollama-react/ pour l'intégration de l'IA
+//Consultation et utilisation de l'IA (Claude) pendant la phase de développement su projet.

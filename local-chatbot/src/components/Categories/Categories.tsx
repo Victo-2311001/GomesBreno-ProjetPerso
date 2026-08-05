@@ -64,3 +64,5 @@ export default function Categories() {
     </Paper>
   );
 }
+
+//Consultation et utilisation de l'IA (Claude) pendant la phase de développement su projet.

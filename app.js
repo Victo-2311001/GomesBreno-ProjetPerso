@@ -301,3 +301,4 @@ try {
 export default app;
 
 //Consultation du site: https://jsdev.space/local-ai-ollama-react/ pour l'intégration de l'IA
+//Consultation et utilisation de l'IA (Claude) pendant la phase de développement su projet.
