@@ -11,3 +11,5 @@ describe("GET /health", () => {
     expect(res.body.model).toBeDefined();
   });
 });
+
+//Utilisation de l'IA pour faire un test avec le get qui vérifie la "santé" de l'API et le nom du modèle utilisé par l'IA

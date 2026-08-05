@@ -1,0 +1,143 @@
+TESTS FONCTIONNELS:
+
+=====Tests (chat.test.js et health.test.js):
+
+Pour commencer, dans le back-end il a deux tests intégré qui sont lancé avec la commande npm test
+
+1) describe("GET /health", () = vérifier la connexon avec l'API et le modèle de l'IA
+
+2/3) describe("POST /chat", () =
+
+Retourne 400 si le champ manquant
+Retourne 400 si le champ est vide
+
+=====PROMPT:
+
+ `Tu es un extracteur de données financières. Cette image peut contenir UNE SEULE dépense (reçu) OU une LISTE de plusieurs transactions (historique bancaire).
+
+    IMPORTANT: Compte D'ABORD combien de transactions distinctes sont visibles dans l'image. Ensuite, retourne un tableau JSON avec EXACTEMENT un élément par transaction trouvée — même s'il y en a 5, 10, ou plus. Ne résume JAMAIS plusieurs transactions en une seule, sauf si l'image est un seul reçu détaillé représentant un seul achat total.
+    IMPORTANT: N'importe quelle entrée d'argent est considérée comme un revenu et doit être dans la catégorie "Revenus".
+    IMPORTANT: Il est obligatoire que CHAQUE dépense contienne un montant supérieur à 0 (fais attention avec les virgules ou les points etre les chiffres), un marchand et une catégorie.
+    IMPORTANT: Retourne toujours le montant en valeur POSITIVE (sans signe négatif), même si le relevé bancaire affiche un montant négatif pour une dépense.
+    Choisis la categorie parmi cette liste exacte: ${listeCategories}
+
+    Exemple avec 2 transactions:
+    [
+    { "montant": 1.71, "categorie": "Épicerie", "date": "2026-07-28", "marchand": "Depanneur Lafon", "description": "Achat dépanneur" },
+    { "montant": 40.00, "categorie": "Essence", "date": "2026-07-28", "marchand": "Ultramar", "description": "Plein d'essence" }
+    ]
+        
+    Si une information est illisible ou absente, marque illisible dans le champ et ajoute dans la catégorie Corriger
+    
+    Exemple
+    [
+    { "montant": 1.71, "categorie": "Corriger", "date": "2026-07-28", "marchand": "illisible", "description": "Achat dépanneur" },
+    ]
+    
+    ${instructionUtilisateur ? `\n\nInstruction supplémentaire de l'utilisateur (à respecter en plus des règles ci-dessus): ${instructionUtilisateur}` : ""}`;
+
+4) Le prompt valide que touts les revenus sont catégoriser comme revenus
+5) Le prompt valide que les montants retournées sont toujours positifs 
+6) Le prompt valide que chaque dépense a une catégorie
+7) Le prompt valide que chaque dépense a un marchand 
+8) Le prompt valide que chaque dépense a un montant supérieur à 0
+9) Le prompt valide que chaque dépense est retorune est json dans le même format que les deux autres exemples
+10) Le prompt valide que toutes les dépenses sont prises individuellements et non comme une grosse facture
+
+App.tsx (routes):
+
+11) catch (err) {
+    console.error(err?.response?.data || err.message);
+    res.status(500).json({ error: "AI service error" });
+} = Si l'IA n'est pas capable de répondre (réenvoyé dans toutes les rêquetes)
+
+12) app.post("/chat-image" 
+
+if (!file) {
+    return res.status(400).json({ error: "Aucune image fournie." });
+    }
+
+Envoyer message d'erreur si photo manquante
+
+13) app.post("chat/image"
+
+const [categories] = await pool.query("SELECT nom FROM categories");
+    if (!Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({
+            error: "Aucune catégorie disponible.",
+        });
+    }
+
+Envoyer message d'erreur si la liste de catégories est vide
+
+14)app.put("/depenses/:id"
+
+if (!marchand || String(marchand).trim() === "") {
+return res.status(400).json({ error: "Marchand requis." });
+}
+
+Vérifie si le marchand est fourni et non vide
+
+15)app.put("/depenses/:id"
+
+if (Number.isNaN(montantValue) || montantValue <= 0) {
+return res.status(400).json({ error: "Montant invalide. Doit être supérieur à 0." });
+}
+
+Vérifier que le montant est supérieur à 0
+
+16)app.put("/depenses/:id"
+
+if (!categorie || String(categorie).trim() === "") {
+return res.status(400).json({ error: "Catégorie requise." });
+}
+
+Vérifier que la catégorie est présente
+
+=====Chat.tsx
+
+17)    if (!text && !selectedFile) {
+      setMessage("Merci d'indiquer un message ou de choisir une image.");
+      return;
+    }
+
+Affiche message d'erreur si chat ou image sont vides 
+
+18) setMessage("Erreur : service IA indisponible. Vérifiez votre connexion et réessayez.");
+
+Affiche message si erreur avec connexion IA
+
+19){categories.length === 0 && (
+        <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+          Aucune catégorie trouvée. Ajoutez des catégories avant d'envoyer des dépenses ou des images.
+        </Typography>
+      )}
+
+Afficher message si catégories vides
+
+=====Stats.tsx
+
+20) const montantValue = parseFloat(montantEdit);
+    if (Number.isNaN(montantValue) || montantValue <= 0) {
+      setMessage("Montant invalide. Veuillez saisir un montant positif.");
+      return;
+    }
+
+Vérifier que le montant est supérieur à 0 avant update
+
+21)if (!categorieEdit || categorieEdit.trim() === "") {
+      setMessage("La catégorie est obligatoire.");
+      return;
+    }
+
+Vérifier que catégorie est existante
+
+=====Categories.tsx
+
+22) if (!nouveauNom.trim()) {
+      alert("Le nom de la catégorie est requis.");
+      return;
+    }
+
+Vérifier que le nom de la catégorie n'est pas vide
+

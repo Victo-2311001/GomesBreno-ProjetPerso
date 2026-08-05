@@ -17,7 +17,7 @@ app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
-//Tester si le serveur est en ligne et le modèle utilisé
+//Tester connexion avec API et le modèle utilisé
 app.get("/health", (req, res) => {
   res.json({ ok: true, model: MODEL });
 });
@@ -66,11 +66,17 @@ try {
 
     //Vérifier si photo existe
     if (!file) {
-    return res.status(400).json({ error: "Aucune 'image' file in form-data" });
+        return res.status(400).json({ error: "Aucune image fournie." });
     }
     
-//Va chercher les catégories existantes pour ajouter dans le prompt
-const [categories] = await pool.query("SELECT nom FROM categories");
+    //Va chercher les catégories existantes pour ajouter dans le prompt
+    const [categories] = await pool.query("SELECT nom FROM categories");
+    //Vérifie si le tableau de catégories est vide ou non défini
+    if (!Array.isArray(categories) || categories.length === 0) {
+        return res.status(400).json({
+            error: "Aucune catégorie disponible.",
+        });
+    }
     const listeCategories = categories.map(categories => categories.nom).join(", ");
 
     const promptSysteme =
@@ -87,7 +93,12 @@ const [categories] = await pool.query("SELECT nom FROM categories");
     { "montant": 40.00, "categorie": "Essence", "date": "2026-07-28", "marchand": "Ultramar", "description": "Plein d'essence" }
     ]
 
-    Si une information est illisible ou absente, utilise null pour ce champ.
+    Si une information est illisible ou absente, marque illisible dans le champ et ajoute dans la catégorie Corriger
+    
+    Exemple
+    [
+    { "montant": 1.71, "categorie": "Corriger", "date": "2026-07-28", "marchand": "illisible", "description": "Achat dépanneur" },
+    ]
     ${instructionUtilisateur ? `\n\nInstruction supplémentaire de l'utilisateur (à respecter en plus des règles ci-dessus): ${instructionUtilisateur}` : ""}`;
 
     //Ollama veut les images en base64
@@ -197,6 +208,11 @@ app.post("/depenses/add", async (req, res) => {
 try {
     const depenses = req.body.depenses;
 
+    //Vérifie si le tableau de dépenses est vide ou non défini
+    if (!Array.isArray(depenses) || depenses.length === 0) {
+      return res.status(400).json({ error: "Aucune dépense à ajouter." });
+    }
+
     const insertPromises = depenses.map(depense => {
     const { montant, categorie, date, marchand, description } = depense;
     return pool.query(
@@ -241,6 +257,21 @@ app.put("/depenses/:id", async (req, res) => {
 try {
     const { id } = req.params;
     const { marchand, montant, description, categorie, pourQuelquUnAutre } = req.body;
+    const montantValue = Number(montant);
+
+    //Vérifie si le marchand est fourni et non vide
+    if (!marchand || String(marchand).trim() === "") {
+      return res.status(400).json({ error: "Marchand requis." });
+    }
+
+    //Vérifie si le montant est un nombre valide et supérieur à 0
+    if (Number.isNaN(montantValue) || montantValue <= 0) {
+      return res.status(400).json({ error: "Montant invalide. Doit être supérieur à 0." });
+    }
+    //Vérifie si la catégorie est fournie et non vide
+    if (!categorie || String(categorie).trim() === "") {
+      return res.status(400).json({ error: "Catégorie requise." });
+    }
 
     await pool.query(
     "UPDATE depenses SET marchand = ?, montant = ?, description = ?, categorie_id = (SELECT id FROM categories WHERE nom = ?), pour_quelquun_autre = ? WHERE id = ?",

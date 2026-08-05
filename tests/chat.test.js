@@ -16,3 +16,5 @@ describe("POST /chat", () => {
     expect(res.status).toBe(400);
   });
 });
+
+//Utilisation de l'IA pour faire un test avec le post qui vérifie la réponse de l'IA en fonction du contenu envoyé

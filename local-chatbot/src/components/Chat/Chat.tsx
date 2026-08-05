@@ -20,6 +20,7 @@ export default function Chat() {
   const [loading, setLoading] = useState<boolean>(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [message, setMessage] = useState<string>("");
 
   const promptRef = useRef<HTMLInputElement | null>(null);
 
@@ -71,8 +72,14 @@ export default function Chat() {
     const text = selectedFile
     ? promptRef.current?.value.trim() ?? ""
     : inputRef.current?.value.trim() ?? "";
+
     //Si aucun texte ni image n'est fourni, ne rien faire
-    if (!text && !selectedFile) return;
+    if (!text && !selectedFile) {
+      setMessage("Merci d'indiquer un message ou de choisir une image.");
+      return;
+    }
+
+    setMessage(""); 
 
     //Si une image est sélectionnée, envoyer la requête avec l'image
     if (selectedFile) {
@@ -99,6 +106,7 @@ export default function Chat() {
 
         setChat((prev) => [...prev,     { role: "Radin", content: contenuFormatte, depenses: depensesExtraites, enregistre: false },]);
       } catch (e) {
+        setMessage("Erreur : service IA indisponible. Vérifiez votre connexion et réessayez.");
         setChat((prev) => [...prev, { role: "Radin", content: "Error: AI service (image)" }]);
       } finally {
         setLoading(false);
@@ -121,6 +129,7 @@ export default function Chat() {
       const { data } = await axios.post(`${API_BASE}/chat`, { content: text });
       setChat((prev) => [...prev, { role: "Radin", content: data?.data ?? "" }]);
     } catch (e) {
+      setMessage("Erreur : service IA indisponible. Vérifiez votre connexion et réessayez.");
       setChat((prev) => [...prev, { role: "Radin", content: "Error: AI service" }]);
     } finally {
       setLoading(false);
@@ -263,6 +272,17 @@ export default function Chat() {
         )}
       </Paper>
 
+      {categories.length === 0 && (
+        <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+          Aucune catégorie trouvée. Ajoutez des catégories avant d'envoyer des dépenses ou des images.
+        </Typography>
+      )}
+      {message && (
+        <Typography variant="body2" color="error.main" sx={{ mt: 1 }}>
+          {message}
+        </Typography>
+      )}
+      
       {imagePreview && (
         <Box sx={{ mt: 1.5, display: "flex", alignItems: "center", gap: 1 }}>
           <img src={imagePreview} alt="preview" style={{ maxWidth: 120, borderRadius: 6 }} />

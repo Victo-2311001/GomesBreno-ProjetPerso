@@ -16,16 +16,20 @@ export default function Categories() {
       .catch((err) => console.error(err));
   }, []);
 
+  //Ajouter une nouvelle catégorie
   const AjouterCategorie = () => {
-    if (nouveauNom) {
-      axios
-        .post(`${API_BASE}/categories/add`, { nom: nouveauNom })
-        .then((res) => {
-          setCategories([...categories, res.data]);
-          setNouveauNom("");
-        })
-        .catch((err) => console.error(err));
+    //Vérifier que le nom de la catégorie n'est pas vide avant d'envoyer la requête
+    if (!nouveauNom.trim()) {
+      alert("Le nom de la catégorie est requis.");
+      return;
     }
+    axios
+      .post(`${API_BASE}/categories/add`, { nom: nouveauNom })
+      .then((res) => {
+        setCategories([...categories, res.data]);
+        setNouveauNom("");
+      })
+      .catch((err) => console.error(err));
   };
 
   return (

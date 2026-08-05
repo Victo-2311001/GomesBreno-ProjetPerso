@@ -34,6 +34,9 @@ export default function Stats() {
   const [categorieEdit, setCategorieEdit] = useState("");
   const [pourQuelquUnAutreEdit, setPourQuelquUnAutreEdit] = useState(false);
 
+  const [message, setMessage] = useState<string>("");
+
+
 
   useEffect(() => {
     axios.get<Depense[]>(`${API_BASE}/depenses`)
@@ -130,14 +133,27 @@ export default function Stats() {
     setDescriptionEdit(d.description ?? "");
     setCategorieEdit(d.categorie);
     setPourQuelquUnAutreEdit(d.pourQuelquUnAutre);
+    setMessage("");
   };
 
   const fermerEdition = () => {
     setDepenseEnEdition(null);
+    setMessage("");
   };
 
   const sauvegarderEdition = () => {
     if (!depenseEnEdition) return;
+
+    //Vérifier que le montant est un nombre positif et que la catégorie n'est pas vide
+    const montantValue = parseFloat(montantEdit);
+    if (Number.isNaN(montantValue) || montantValue <= 0) {
+      setMessage("Montant invalide. Veuillez saisir un montant positif.");
+      return;
+    }
+    if (!categorieEdit || categorieEdit.trim() === "") {
+      setMessage("La catégorie est obligatoire.");
+      return;
+    }
 
     axios.put(`${API_BASE}/depenses/${depenseEnEdition.id}`, {
       marchand: marchandEdit,
@@ -156,7 +172,7 @@ export default function Stats() {
       fermerEdition();
     }).catch((err) => {
       console.error(err);
-      alert("Erreur lors de la modification.");
+      setMessage("Erreur lors de la mise à jour. Veuillez réessayer.");
     });
   };
 
@@ -303,6 +319,11 @@ export default function Stats() {
       <Dialog open={depenseEnEdition !== null} onClose={fermerEdition} fullWidth maxWidth="xs">
         <DialogTitle>Modifier la dépense</DialogTitle>
         <DialogContent dividers sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          {message && (
+            <Typography variant="body2" color="error.main">
+              {message}
+            </Typography>
+          )}
           <TextField
             label="Marchand"
             value={marchandEdit}
